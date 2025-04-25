@@ -4,6 +4,13 @@ A modern, cross-platform desktop chat application for interacting with LLMs (Lar
 
 ---
 
+## 📥 Download
+
+Pre-compiled releases are available at:
+[Releases](https://github.com/alfredwallace7/chatbox/releases)
+
+---
+
 ## ✨ Features
 
 - **Multi-Model Support:**
@@ -29,7 +36,7 @@ A modern, cross-platform desktop chat application for interacting with LLMs (Lar
 
 ---
 
-## Screenshots
+## 📸 Screenshots
 
 ![ChatBox screenshot](./asset/screenshot_1.png)
 
@@ -82,6 +89,12 @@ A modern, cross-platform desktop chat application for interacting with LLMs (Lar
 - [lucide-react](https://lucide.dev/) for icons
 - [Vite](https://vitejs.dev/) and [Electron](https://www.electronjs.org/) for the amazing developer experience
 - All open-source contributors and the community!
+
+---
+
+## 📋 License
+
+[MIT](./LICENSE)
 
 ---
 
