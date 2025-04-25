@@ -1,0 +1,70 @@
+{
+  "name": "llm-chat-desktop",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"cross-env VITE_DEV_SERVER_URL=http://localhost:5173 vite\" \"electron .\"",
+    "electron:build": "vite build && electron-builder",
+    "electron:preview": "vite build && electron ."
+  },
+  "dependencies": {
+    "ace-builds": "^1.40.1",
+    "classnames": "^2.5.1",
+    "electron-store": "^8.2.0",
+    "lang-detector": "^1.0.6",
+    "litellm": "^0.12.0",
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-ace": "^14.0.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^15.6.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^29.1.0",
+    "electron-builder": "^24.13.3",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2"
+  },
+  "build": {
+    "appId": "com.chatbox.app",
+    "productName": "ChatBox",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

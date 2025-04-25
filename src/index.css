@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Thin scrollbar styles for all scrollable elements */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #888 transparent;
+}
+
+/* ACE Editor base tweaks (neutral layout only, not colors) */
+.ace_editor {
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: none !important;
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', 'monospace' !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Theme-based background only (let Ace theme handle colors) */
+html.dark .ace_editor,
+html.dark .ace_scroller,
+html.dark .ace_content {
+  background-color: #1e1e1e !important;
+  color: unset !important;
+}
+
+html:not(.dark) .ace_editor,
+html:not(.dark) .ace_scroller,
+html:not(.dark) .ace_content {
+  background-color: #f8f8f8 !important;
+  color: unset !important;
+}
+
+/* Gutter styling */
+.ace_gutter {
+  background: transparent !important;
+  color: #888 !important;
+}
+
+/* Print margin and markers */
+.ace_print-margin {
+  display: none !important;
+}
+.ace_marker-layer .ace_active-line {
+  background: rgba(128, 128, 128, 0.07) !important;
+}
+.ace_marker-layer .ace_selection {
+  background: rgba(100, 149, 237, 0.18) !important;
+}
+
+/* Cursor color */
+.ace_cursor {
+  color: #ffb86c !important;
+}
+
+/* Scrollbars inside Ace */
+.ace_editor,
+.ace_editor * {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #222;
+}
+
+/* Chat action buttons: uniform size, alignment, and hover/focus effects */
+.chat-action-btn {
+  @apply p-2 rounded-full flex items-center justify-center transition-colors outline-none;
+  width: 40px;
+  height: 40px;
+  color: #94a3b8; /* slate-400 */
+  background: transparent;
+  border: none;
+}
+.dark .chat-action-btn {
+  color: #94a3b8;
+}
+.chat-action-btn:hover,
+.chat-action-btn:focus-visible {
+  background: #334155; /* slate-800 */
+  color: #a5b4fc; /* indigo-300 */
+}
+
+/* Send button modifier (for possible color tweaks) */
+.chat-action-btn-send:hover,
+.chat-action-btn-send:focus-visible {
+  background: #6366f1; /* indigo-600 */
+  color: #fff;
+}
+
+/* Stop button modifier (for possible color tweaks) */
+.chat-action-btn-stop:hover,
+.chat-action-btn-stop:focus-visible {
+  background: #dc2626; /* red-600 */
+  color: #fff;
+}
+
+/* Remove default button border and background on focus */
+.chat-action-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+/* Ensure vertical alignment with textarea */
+.chat-action-btn,
+.chat-action-btn-send,
+.chat-action-btn-stop {
+  align-self: end;
+  margin-bottom: 0;
+}
