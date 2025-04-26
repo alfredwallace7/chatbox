@@ -2,15 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, ImagePlus, Square } from 'lucide-react';
 
 interface ChatInputProps {
-  onSendMessage: (message: string, image?: File) => void;
+  onSendMessage: (message: string, images?: File[]) => void;
   isStreaming: boolean;
   onStopStream: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isStreaming, onStopStream }) => {
   const [message, setMessage] = useState('');
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -27,25 +27,28 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isStreaming, onSto
   };
 
   const handleSendMessage = () => {
-    if (message.trim() || image) {
-      onSendMessage(message, image || undefined);
+    if (message.trim() || images.length > 0) {
+      onSendMessage(message, images.length > 0 ? images : undefined);
       setMessage('');
-      setImage(null);
-      setImagePreviewUrl(null);
+      setImages([]);
+      setImagePreviewUrls([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImage(file);
-      
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      setImages(prev => [...prev, ...fileArray]);
+      // Generate previews
+      fileArray.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviewUrls(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
@@ -53,29 +56,33 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isStreaming, onSto
     fileInputRef.current?.click();
   };
 
-  const removeImage = () => {
-    setImage(null);
-    setImagePreviewUrl(null);
-    if (fileInputRef.current) {
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current && images.length === 1) {
       fileInputRef.current.value = '';
     }
   };
 
   return (
     <div className="border-t dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-      {imagePreviewUrl && (
-        <div className="relative mb-2 inline-block">
-          <img 
-            src={imagePreviewUrl} 
-            alt="Preview" 
-            className="h-20 rounded border dark:border-gray-600" 
-          />
-          <button 
-            onClick={removeImage}
-            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-          >
-            ×
-          </button>
+      {imagePreviewUrls.length > 0 && (
+        <div className="flex mb-2 gap-2 flex-wrap">
+          {imagePreviewUrls.map((url, idx) => (
+            <div key={idx} className="relative inline-block">
+              <img 
+                src={url} 
+                alt={`Preview ${idx + 1}`} 
+                className="h-20 rounded border dark:border-gray-600" 
+              />
+              <button 
+                onClick={() => removeImage(idx)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
       <div className="flex items-end space-x-2">
@@ -94,6 +101,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isStreaming, onSto
           ref={fileInputRef}
           className="hidden"
           accept="image/*"
+          multiple
           onChange={handleImageUpload}
         />
         <button

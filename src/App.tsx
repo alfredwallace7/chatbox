@@ -75,11 +75,11 @@ function App() {
     }
   };
 
-  // Modified sendMessage to support abort controller
-  const handleSendMessage = (content: string, image?: File) => {
+  // Modified sendMessage to support abort controller and multiple images
+  const handleSendMessage = (content: string, images?: File[]) => {
     const abortController = new AbortController();
     streamAbortRef.current = abortController;
-    sendMessage(content, image, abortController.signal);
+    sendMessage(content, images, abortController.signal);
     // Force autoscroll after sending a message
     setTimeout(() => {
       setAutoScroll(true);
