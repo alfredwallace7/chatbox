@@ -4,7 +4,6 @@ import { X } from 'lucide-react';
 export interface Settings {
   baseUrl: string;
   apiKey: string;
-  model: string;
   chatMemoryTurns: number;
   systemPrompt: string;
 }
@@ -25,13 +24,6 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
   const [localSettings, setLocalSettings] = useState<Settings>(settings);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState<string>('');
-
-  // Persist settings to localStorage when changed
-  useEffect(() => {
-    localStorage.setItem('settings', JSON.stringify(localSettings));
-    // Optionally, call onSaveSettings if you want to update parent state
-    if (onSaveSettings) onSaveSettings(localSettings);
-  }, [localSettings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -61,6 +53,12 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       setTestStatus('success');
       setTestMessage('Connexion successful!');
+      // Save settings and close drawer on success
+      localStorage.setItem('settings', JSON.stringify(localSettings));
+      if (onSaveSettings) onSaveSettings(localSettings);
+      setTimeout(() => {
+        onClose();
+      }, 700); // Give user feedback before closing
     } catch (err: any) {
       setTestStatus('error');
       setTestMessage('Error: ' + (err?.message || 'Unknown error'));
@@ -122,22 +120,6 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               onChange={handleChange}
               className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="Your API key"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Model
-            </label>
-            <input
-              type="text"
-              id="model"
-              name="model"
-              value={localSettings.model}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Your model"
               required
             />
           </div>

@@ -42,7 +42,7 @@ export interface LLMTokenUsage {
   total_tokens: number;
 }
 
-export const useChatMessages = (settings: { baseUrl: string; apiKey: string; model: string; chatMemoryTurns: number; systemPrompt: string }) => {
+export const useChatMessages = (settings: { baseUrl: string; apiKey: string; chatMemoryTurns: number; systemPrompt: string; model: string }) => {
   const [messages, setMessages] = useState<ChatMessageProps[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [tokenUsage, setTokenUsage] = useState<LLMTokenUsage | null>(null);

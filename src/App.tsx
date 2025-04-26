@@ -10,7 +10,6 @@ import { fetchModels } from './utils/fetchModels';
 type Settings = {
   baseUrl: string;
   apiKey: string;
-  model: string;
   chatMemoryTurns: number;
   systemPrompt: string;
 };
@@ -21,17 +20,26 @@ function App() {
     const stored = localStorage.getItem('settings');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Remove model property if present
+        if ('model' in parsed) delete parsed.model;
+        return parsed;
       } catch (e) {}
     }
     return {
       baseUrl: '',
       apiKey: '',
-      model: '',
       chatMemoryTurns: 0,
       systemPrompt: '',
     };
   });
+  // Model selection state (persisted in localStorage)
+  const [selectedModel, setSelectedModel] = useState(() => {
+    return localStorage.getItem('selectedModel') || '';
+  });
+  useEffect(() => {
+    localStorage.setItem('selectedModel', selectedModel);
+  }, [selectedModel]);
   const [models, setModels] = useState<string[]>([]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -48,9 +56,15 @@ function App() {
     return 'light';
   });
 
+  // Compose settings for useChatMessages, injecting selectedModel
+  const chatSettings = {
+    ...settings,
+    model: selectedModel
+  };
+
   // Chat messages and sending functionality
   const streamAbortRef = useRef<AbortController | null>(null);
-  const { messages, sendMessage, isStreaming, setMessages, tokenUsage } = useChatMessages(settings);
+  const { messages, sendMessage, isStreaming, setMessages, tokenUsage } = useChatMessages(chatSettings);
 
   // Stop streaming handler
   const handleStopStream = () => {
@@ -91,14 +105,48 @@ function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Fetch models when baseUrl or apiKey changes
-  useEffect(() => {
-    async function loadModels() {
-      const result = await fetchModels(settings.baseUrl, settings.apiKey);
-      setModels(result.length > 0 ? result : [settings.model]);
+  // Robust backend/model workflow: atomic update on settings save
+  // Remove previous useEffects for model loading and selection
+
+  // Helper to fetch models and update state atomically
+  const fetchAndSetModels = async (baseUrl: string, apiKey: string) => {
+    try {
+      const result = await fetchModels(baseUrl, apiKey);
+      if (result.length > 0) {
+        setModels(result);
+        // If previous selectedModel is present, keep it. Otherwise select first.
+        setSelectedModel(prev => (result.includes(prev) && prev) ? prev : result[0]);
+      } else {
+        setModels([]);
+        setSelectedModel('');
+      }
+    } catch (err) {
+      // Optionally show a toast/snackbar here
+      // Do NOT clear previous models or selectedModel
+      console.error('Failed to fetch models:', err);
     }
-    loadModels();
-  }, [settings.baseUrl, settings.apiKey]);
+  };
+
+  // On initial mount, load models for current settings
+  useEffect(() => {
+    fetchAndSetModels(settings.baseUrl, settings.apiKey);
+    // eslint-disable-next-line
+  }, []);
+
+  // On settings save, atomically update models/selectedModel
+  // (Now only called after successful Test Connexion)
+  const handleSaveSettings = (newSettings: Omit<Settings, 'model'>) => {
+    setSettings(newSettings);
+    fetchAndSetModels(newSettings.baseUrl, newSettings.apiKey);
+  };
+
+  // New chat handler: clears chat but keeps system prompt
+  const handleNewChat = () => {
+    setMessages(prev => {
+      const sysPromptMsg = prev.length > 0 && prev[0].role === 'system' ? [prev[0]] : [];
+      return sysPromptMsg;
+    });
+  };
 
   // Auto-scroll to bottom when messages change, unless user has scrolled up
   useEffect(() => {
@@ -119,32 +167,14 @@ function App() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSaveSettings = (newSettings: Settings) => {
-    setSettings(newSettings);
-    // In a real implementation, you would save these settings to local storage
-    // or send them to the backend
-  };
-
-  // New chat handler: clears chat but keeps system prompt
-  const handleNewChat = () => {
-    setMessages(prev => {
-      const sysPromptMsg = prev.length > 0 && prev[0].role === 'system' ? [prev[0]] : [];
-      return sysPromptMsg;
-    });
-  };
-
-  const handleChangeModel = (model: string) => {
-    setSettings(prev => ({ ...prev, model }));
-  };
-
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
       <Header
         onOpenSettings={() => setIsSettingsOpen(true)}
         onNewChat={handleNewChat}
         models={models}
-        selectedModel={settings.model}
-        onChangeModel={handleChangeModel}
+        selectedModel={selectedModel}
+        onChangeModel={setSelectedModel}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
