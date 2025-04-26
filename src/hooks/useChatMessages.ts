@@ -59,10 +59,6 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; cha
       timestamp: new Date().toISOString(),
       images: images && images.length > 0 ? await Promise.all(images.map(fileToDataUrl)) : undefined
     } as any; // 'as any' to allow images property for UI rendering
-    // For backward compatibility, keep first image in 'image' property
-    if (images && images.length > 0) {
-      userMessage.image = userMessage.images?.[0];
-    }
     newMsgs.push(userMessage);
     // Add assistant placeholder with streaming dots
     const assistantMessage: ChatMessageProps = {
@@ -92,7 +88,7 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; cha
       const chatMessages = [
         ...newMsgs
           .filter((_, i) => i !== lastAssistantIdx)
-          .map(({ content, role, image }) => {
+          .map(({ content, role }) => {
             // For user message, use messageContent array
             if (role === 'user') {
               return { role, content: messageContent };

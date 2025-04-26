@@ -20,12 +20,12 @@ const Header: React.FC<HeaderProps> = ({ onOpenSettings, onNewChat, models, sele
             <select
               value={selectedModel}
               onChange={e => onChangeModel(e.target.value)}
-              className="bg-transparent border-none text-xl font-semibold text-gray-800 dark:text-white focus:outline-none focus:ring-0 appearance-none pr-8 dark:!text-white py-2 pl-3 rounded-md min-w-[200px] cursor-pointer"
+              className="bg-white dark:bg-gray-800 border-none text-xl font-semibold text-gray-800 dark:text-white focus:outline-none focus:ring-0 appearance-none pr-8 py-2 pl-3 rounded-md min-w-[200px] cursor-pointer"
               style={{ minWidth: 200, cursor: 'pointer' }}
               title="Select Model"
             >
               {models.map(model => (
-                <option key={model} value={model} className="text-gray-900 dark:!text-white bg-white dark:bg-gray-800">{model}</option>
+                <option key={model} value={model} className="text-gray-900 dark:text-white bg-white dark:bg-gray-800">{model}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none w-5 h-5 text-gray-400 dark:text-gray-300" />
