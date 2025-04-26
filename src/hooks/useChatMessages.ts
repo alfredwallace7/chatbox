@@ -150,7 +150,41 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; mod
             }),
             signal: abortSignal,
           });
-          if (!response.body) throw new Error('No response stream');
+          console.log('[LLM DEBUG] Response object:', response);
+          console.log('[LLM DEBUG] Response.body:', response.body);
+          if (!response.body) {
+            // Non-streaming fallback: parse as JSON
+            console.log('[LLM FALLBACK] No response.body, using fallback logic.');
+            const data = await response.json();
+            console.log('[LLM FALLBACK] Raw JSON:', data);
+            const message = data.choices?.[0]?.message?.content;
+            console.log('[LLM FALLBACK] Extracted message:', message);
+            if (message) {
+              setMessages(prev => {
+                const updated = [...prev];
+                if (activeResponseIndex.current !== null && updated[activeResponseIndex.current]) {
+                  console.log('[LLM PATCH DEBUG] activeResponseIndex.current:', activeResponseIndex.current);
+                  console.log('[LLM PATCH DEBUG] updated array:', updated);
+                  console.log('[LLM PATCH DEBUG] Before update:', updated[activeResponseIndex.current]);
+                  updated[activeResponseIndex.current] = {
+                    ...updated[activeResponseIndex.current],
+                    content: message
+                  };
+                  console.log('[LLM PATCH DEBUG] After update:', updated[activeResponseIndex.current]);
+                  return updated;
+                } else {
+                  console.log('[LLM PATCH DEBUG] Assistant message not found or index is null.');
+                  return updated;
+                }
+              });
+            }
+            // Capture token usage if present
+            if (data.usage) setTokenUsage(data.usage);
+            setIsStreaming(false);
+            return;
+          }
+          // Streaming block
+          console.log('[LLM STREAM] Entering streaming loop');
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
@@ -161,15 +195,27 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; mod
             if (abortSignal && abortSignal.aborted) break;
             const { value, done: doneReading } = await reader.read();
             done = doneReading;
+            console.log('[LLM STREAM] Chunk read:', value);
             if (value) {
-              buffer += decoder.decode(value, { stream: true });
+              const decoded = decoder.decode(value, { stream: true });
+              console.log('[LLM STREAM] Decoded chunk:', decoded);
+              buffer += decoded;
               let lines = buffer.split('\n');
               buffer = lines.pop() ?? '';
+              console.log('[LLM PATCH DEBUG] lines array:', lines);
               for (const line of lines) {
                 const trimmed = line.trim();
+                console.log('[LLM PATCH DEBUG] trimmed line:', trimmed);
+                let jsonStr = null;
                 if (trimmed.startsWith('data:')) {
-                  const jsonStr = trimmed.slice(5).trim();
+                  jsonStr = trimmed.slice(5).trim();
                   if (jsonStr === '[DONE]') continue;
+                } else if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                  // Handle full JSON object in one chunk (non-streaming in a stream)
+                  jsonStr = trimmed;
+                }
+                if (jsonStr) {
+                  console.log('[LLM PATCH DEBUG] Entering jsonStr block with:', jsonStr);
                   try {
                     const data = JSON.parse(jsonStr);
                     // LOG RAW LLM OUTPUT
@@ -178,23 +224,32 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; mod
                     if (data.usage) {
                       usage = data.usage;
                     }
+                    // Try both delta (streaming) and message.content (full JSON)
                     const delta = data.choices?.[0]?.delta?.content;
-                    if (delta) {
+                    const message = data.choices?.[0]?.message?.content;
+                    const text = delta ?? message;
+                    if (text) {
                       setMessages(prev => {
                         const updated = [...prev];
+                        console.log('[LLM PATCH DEBUG] activeResponseIndex.current:', activeResponseIndex.current);
+                        console.log('[LLM PATCH DEBUG] updated array:', updated);
                         if (activeResponseIndex.current !== null && updated[activeResponseIndex.current]) {
+                          console.log('[LLM PATCH DEBUG] Before update:', updated[activeResponseIndex.current]);
                           // If currently showing streaming dots, replace with first chunk
                           if (updated[activeResponseIndex.current].content === '...STREAMING') {
                             updated[activeResponseIndex.current] = {
                               ...updated[activeResponseIndex.current],
-                              content: delta
+                              content: text
                             };
                           } else {
                             updated[activeResponseIndex.current] = {
                               ...updated[activeResponseIndex.current],
-                              content: updated[activeResponseIndex.current].content + delta
+                              content: updated[activeResponseIndex.current].content + text
                             };
                           }
+                          console.log('[LLM PATCH DEBUG] After update:', updated[activeResponseIndex.current]);
+                        } else {
+                          console.log('[LLM PATCH DEBUG] Assistant message not found or index is null.');
                         }
                         return updated;
                       });
@@ -206,8 +261,32 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; mod
               }
             }
           }
+          console.log('[LLM STREAM] Exiting streaming loop');
           // After stream ends, set token usage if found
           if (usage) setTokenUsage(usage);
+          // PATCH: If buffer contains a full JSON object (single-chunk, no newlines), parse and update
+          if (buffer.trim().startsWith('{') && buffer.trim().endsWith('}')) {
+            try {
+              const data = JSON.parse(buffer.trim());
+              console.log('[LLM PATCH DEBUG] Post-loop buffer JSON:', data);
+              const message = data.choices?.[0]?.message?.content;
+              if (message) {
+                setMessages(prev => {
+                  const updated = [...prev];
+                  if (activeResponseIndex.current !== null && updated[activeResponseIndex.current]) {
+                    updated[activeResponseIndex.current] = {
+                      ...updated[activeResponseIndex.current],
+                      content: message
+                    };
+                  }
+                  return updated;
+                });
+              }
+              if (data.usage) setTokenUsage(data.usage);
+            } catch (err) {
+              console.log('[LLM PATCH DEBUG] Error parsing post-loop buffer:', err);
+            }
+          }
         } catch (err) {
           if (abortSignal && abortSignal.aborted) {
             // Streaming was aborted by user
