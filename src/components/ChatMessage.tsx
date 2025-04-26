@@ -23,6 +23,7 @@ export interface ChatMessageProps {
   role: MessageRole;
   timestamp?: string;
   image?: string;
+  images?: string[];
 }
 
 interface ChatMessageWithTokens extends ChatMessageProps {
@@ -60,6 +61,7 @@ const ChatMessage: React.FC<ChatMessageWithTokens> = ({
   role, 
   timestamp,
   image,
+  images,
   tokens
 }) => {
   let formattedTime = '';
@@ -88,13 +90,36 @@ const ChatMessage: React.FC<ChatMessageWithTokens> = ({
 
   const showStreamingDots = isAssistant && (isStreaming || (!content && isStreaming));
 
+  const renderImages = () => {
+    if (images && images.length > 0) {
+      return (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          {images.map((img, idx) => (
+            <img
+              key={idx}
+              src={img}
+              alt={`uploaded-${idx}`}
+              style={{ maxWidth: 120, maxHeight: 120, borderRadius: 8, border: '2px solid #222' }}
+            />
+          ))}
+        </div>
+      );
+    } else if (image) {
+      // fallback for single image
+      return (
+        <img src={image} alt="uploaded" style={{ maxWidth: 120, maxHeight: 120, borderRadius: 8, border: '2px solid #222', marginBottom: 8 }} />
+      );
+    }
+    return null;
+  };
+
   return (
     <div className={classNames('flex', isUser ? 'justify-end' : 'justify-start') + ' my-2'}>
       <div className={classNames(
         'rounded-lg px-4 py-2 max-w-[80%] shadow-sm',
         isUser ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-none'
       )}>
-        {image && <img src={image} alt="Uploaded content" className="max-w-full rounded mb-2" />}
+        {isUser && renderImages()}
         {showStreamingDots ? (
           <span className="inline-flex items-center gap-1">
             <span className="animate-bounce">.</span>

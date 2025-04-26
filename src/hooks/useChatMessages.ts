@@ -57,11 +57,11 @@ export const useChatMessages = (settings: { baseUrl: string; apiKey: string; cha
       content,
       role: 'user',
       timestamp: new Date().toISOString(),
-      image: undefined // keep only the single-image preview for UI
-    };
+      images: images && images.length > 0 ? await Promise.all(images.map(fileToDataUrl)) : undefined
+    } as any; // 'as any' to allow images property for UI rendering
+    // For backward compatibility, keep first image in 'image' property
     if (images && images.length > 0) {
-      // Store first image preview as before for UI
-      userMessage.image = await fileToDataUrl(images[0]);
+      userMessage.image = userMessage.images?.[0];
     }
     newMsgs.push(userMessage);
     // Add assistant placeholder with streaming dots

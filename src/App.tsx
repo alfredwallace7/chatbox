@@ -206,6 +206,7 @@ function App() {
                   role={msg.role}
                   timestamp={msg.timestamp}
                   image={msg.image}
+                  images={msg.images}
                   tokens={index === messages.length - 1 && msg.role === 'assistant' && tokenUsage ? tokenUsage : undefined}
                 />
               ))}
